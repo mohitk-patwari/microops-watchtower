@@ -1,0 +1,8 @@
+POST http://localhost:3000/api/ingest
+Content-Type: application/json
+
+{
+  "service": "payments-service",
+  "message": "TypeError: something failed",
+  "stack": "TypeError: at pay.js:45:12"
+}
