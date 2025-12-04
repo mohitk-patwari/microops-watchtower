@@ -142,20 +142,15 @@ export async function POST(request: Request) {
         const { ObjectId } = await import("mongodb");
         const oid = new ObjectId(cachedIncidentId);
         const updRes = await incidentsCol.updateOne({ _id: oid }, updateDoc);
-        console.log("updateOne by _id result:", JSON.stringify(updRes, null, 2));
         incidentDoc = await incidentsCol.findOne({ _id: oid });
       } catch (err) {
-        console.warn("Cached-id path failed, falling back to fingerprint upsert:", err);
         const up = await incidentsCol.updateOne({ fingerprint }, updateDoc, { upsert: true });
-        console.log("fallback updateOne by fingerprint result:", JSON.stringify(up, null, 2));
         incidentDoc = await incidentsCol.findOne({ fingerprint });
       }
     } else {
       // no cache: upsert by fingerprint then read the document explicitly
       const up = await incidentsCol.updateOne({ fingerprint }, updateDoc, { upsert: true });
-      console.log("updateOne upsert result:", JSON.stringify(up, null, 2));
       incidentDoc = await incidentsCol.findOne({ fingerprint });
-      console.log("findOne by fingerprint result:", JSON.stringify(incidentDoc, null, 2));
     }
 
         if (!incidentDoc) {
@@ -168,7 +163,7 @@ export async function POST(request: Request) {
       try {
         await redis.set(dedupeKey, String(incidentDoc._id), { nx: true, ex: DEDUPE_TTL });
       } catch (err) {
-        console.warn("Redis SET error (continuing):", err);
+        // silently ignore Redis errors - upsert succeeded
       }
     }
         // 5) Return incident + event summary
@@ -185,7 +180,6 @@ export async function POST(request: Request) {
             eventId: String(eventId),
         });
     } catch (err: any) {
-        console.error("POST /api/ingest error:",err);
         return NextResponse.json({ok:false, error: err?.message ?? String(err) },{status: 500 });
     }
 }

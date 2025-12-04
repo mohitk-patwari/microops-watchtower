@@ -22,8 +22,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       { $set: { status, lastSeen: new Date() } }
     );
 
-    console.log("PATCH updateOne result:", JSON.stringify(updateRes, null, 2));
-
     // If no document was matched, return 404
     if (updateRes.matchedCount === 0) {
       return NextResponse.json({ ok: false, error: "incident not found" }, { status: 404 });
@@ -31,7 +29,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     // Read back the updated document
     const incidentDoc = await incidentsCol.findOne({ _id: oid });
-    console.log("PATCH findOne result:", JSON.stringify(incidentDoc, null, 2));
 
     if (!incidentDoc) {
       return NextResponse.json({ ok: false, error: "could not retrieve updated incident" }, { status: 500 });
