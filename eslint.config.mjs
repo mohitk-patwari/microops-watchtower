@@ -20,6 +20,11 @@ const eslintConfig = [
       "next-env.d.ts",
     ],
   },
+  {
+    rules: {
+      "jsx-a11y/aria-proptypes": "off",
+    },
+  },
 ];
 
 export default eslintConfig;

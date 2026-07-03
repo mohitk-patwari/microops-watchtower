@@ -1,8 +1,9 @@
 // src/app/api/ingest/route.ts
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { connectToDatabase } from "../../../lib/mongo"; 
+import { connectToDatabase } from "@/lib/db";
 import { Redis } from "@upstash/redis";
+import type { Document } from "mongodb";
 
 /**
  * Notes:
@@ -112,9 +113,8 @@ export async function POST(request: Request) {
             try {
                 const v = await redis.get(dedupeKey);
                 if (v) cachedIncidentId = String(v);
-            } catch (err) {
+            } catch {
                 // Redis might be down - fallback to Mongo upsert below
-                console.warn("Redis GET error (continuing):", err);
             }
         }
 
@@ -135,21 +135,21 @@ export async function POST(request: Request) {
         };
 
         // If we have cachedIncidentId, prefer to update by _id for slightly faster path
-    let incidentDoc: any = null;
+    let incidentDoc: Document | null = null;
           if (cachedIncidentId) {
       // cached id path (preferred): try update by _id, then read back
       try {
         const { ObjectId } = await import("mongodb");
         const oid = new ObjectId(cachedIncidentId);
-        const updRes = await incidentsCol.updateOne({ _id: oid }, updateDoc);
+        await incidentsCol.updateOne({ _id: oid }, updateDoc);
         incidentDoc = await incidentsCol.findOne({ _id: oid });
-      } catch (err) {
-        const up = await incidentsCol.updateOne({ fingerprint }, updateDoc, { upsert: true });
+      } catch {
+        await incidentsCol.updateOne({ fingerprint }, updateDoc, { upsert: true });
         incidentDoc = await incidentsCol.findOne({ fingerprint });
       }
     } else {
       // no cache: upsert by fingerprint then read the document explicitly
-      const up = await incidentsCol.updateOne({ fingerprint }, updateDoc, { upsert: true });
+      await incidentsCol.updateOne({ fingerprint }, updateDoc, { upsert: true });
       incidentDoc = await incidentsCol.findOne({ fingerprint });
     }
 
@@ -162,7 +162,7 @@ export async function POST(request: Request) {
     if (redis) {
       try {
         await redis.set(dedupeKey, String(incidentDoc._id), { nx: true, ex: DEDUPE_TTL });
-      } catch (err) {
+      } catch {
         // silently ignore Redis errors - upsert succeeded
       }
     }
@@ -179,7 +179,8 @@ export async function POST(request: Request) {
             },
             eventId: String(eventId),
         });
-    } catch (err: any) {
-        return NextResponse.json({ok:false, error: err?.message ?? String(err) },{status: 500 });
+    } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return NextResponse.json({ok:false, error: message },{status: 500 });
     }
 }

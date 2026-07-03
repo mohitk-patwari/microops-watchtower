@@ -1,7 +1,6 @@
-// Usage: node scripts/send_events.js 
+// Usage: node scripts/send_events.js
 
-const fetch = require("node-fetch"); // node 18+ has fetch built in; if not,install node-fetch
-const url ="http://localhost:3000/api/ingest";
+const url = "http://localhost:3000/api/ingest";
 
 async function sendEvent(payload) {
     const res = await fetch(url, {
