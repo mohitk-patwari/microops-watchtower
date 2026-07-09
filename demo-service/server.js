@@ -52,8 +52,7 @@ app.get("/pay/:userId", (req, res, next) => {
     if (Math.random() < 0.3) {
       // Null-reference bug: card lookup occasionally returns undefined
       const card = undefined;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const last4 = card.last4; // throws TypeError, different userId each time
+      void card.last4; // throws TypeError, different userId each time
     }
     res.json({ ok: true, userId, amount: Math.round(Math.random() * 500) });
   } catch (err) {
@@ -94,7 +93,7 @@ app.get("/health", (req, res) => res.json({ ok: true }));
 // Global error handler: every unhandled route error gets reported
 // automatically. This is the piece that makes ingestion "genuine" —
 // nobody is hand-crafting payloads, the service is reporting its own faults.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Express detects error-handling middleware by its 4-arg signature, so _next must stay even though it's unused here
 app.use((err, req, res, _next) => {
   reportError(err, { route: req.path });
   res.status(500).json({ ok: false, error: err.message });

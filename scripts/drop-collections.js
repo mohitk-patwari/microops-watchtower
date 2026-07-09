@@ -8,10 +8,7 @@
 // Destructive. Requires --yes to actually run.
 // Run: node scripts/drop-collections.js --yes
 
-import { MongoClient } from "mongodb";
-import dotenv from "dotenv";
-
-dotenv.config({ path: ".env.local" });
+import { connectScriptDb } from "./lib/db.js";
 
 async function main() {
   if (!process.argv.includes("--yes")) {
@@ -23,18 +20,7 @@ async function main() {
     process.exit(1);
   }
 
-  const uri = process.env.MONGODB_URI;
-  const dbName = process.env.MONGODB_DB ?? "microops";
-
-  if (!uri) {
-    throw new Error("MONGODB_URI is not set. Add it to .env.local first.");
-  }
-
-  const client = new MongoClient(uri);
-  await client.connect();
-  console.log(`Connected to Mongo, using db "${dbName}"`);
-
-  const db = client.db(dbName);
+  const { client, db } = await connectScriptDb();
 
   for (const name of ["incidents", "events"]) {
     const result = await db.collection(name).deleteMany({});

@@ -12,24 +12,10 @@
 //    Mongo auto-delete raw events after 30 days, which is standard practice
 //    for high-volume, low-value-per-record data like raw error events.
 
-import { MongoClient } from "mongodb";
-import dotenv from "dotenv";
-
-dotenv.config({ path: ".env.local" });
+import { connectScriptDb } from "./lib/db.js";
 
 async function main() {
-  const uri = process.env.MONGODB_URI;
-  const dbName = process.env.MONGODB_DB ?? "microops";
-
-  if (!uri) {
-    throw new Error("MONGODB_URI is not set. Add it to .env.local first.");
-  }
-
-  const client = new MongoClient(uri);
-  await client.connect();
-  console.log(`Connected to Mongo, using db "${dbName}"`);
-
-  const db = client.db(dbName);
+  const { client, db } = await connectScriptDb();
 
   // --- incidents collection ---
   await db.collection("incidents").createIndex(
