@@ -1,0 +1,12 @@
+{
+  "name": "watchtower-demo-service",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Minimal instrumented service used to generate organic error traffic for MicroOps Watchtower",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
